@@ -16,9 +16,10 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         guard let windowScene = (scene as? UIWindowScene) else { return }
 		
 		let taskManager = TaskManager()
+		let presenter = Presenter()
 		window = UIWindow(windowScene: windowScene)
 		window?.makeKeyAndVisible()
-		window?.rootViewController = TaskListViewController(taskManager: taskManager)
+		window?.rootViewController = TaskListViewController(taskManager: taskManager, presenter: presenter)
     }
 
     func sceneDidDisconnect(_ scene: UIScene) {

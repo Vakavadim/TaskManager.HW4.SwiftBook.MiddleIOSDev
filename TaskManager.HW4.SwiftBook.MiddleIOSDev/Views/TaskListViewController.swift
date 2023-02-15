@@ -8,13 +8,15 @@
 import UIKit
 
 class TaskListViewController: UIViewController {
-	
 	weak var tableView: UITableView!
+	private let heightForRow: CGFloat = 70
 	private var taskManager: ITaskManager
+	private var presenter: IPresenter
 	
 	override func loadView() {
 		super.loadView()
 		setupTableView()
+		setupTableViewCell()
 	}
 	
 	override func viewDidLoad() {
@@ -22,9 +24,6 @@ class TaskListViewController: UIViewController {
 		tableView.dataSource = self
 		tableView.delegate = self
 		tableView.backgroundColor = .white
-		
-		tableView.register(TaskCell.self, forCellReuseIdentifier: TaskCell.indetifire)
-
 	}
 	
 	func setupTableView() {
@@ -40,8 +39,14 @@ class TaskListViewController: UIViewController {
 		self.tableView = tv
 	}
 	
-	init(taskManager: ITaskManager) {
+	private func setupTableViewCell() {
+		let nib = UINib(nibName: "TaskCell", bundle: nil)
+		tableView.register(nib, forCellReuseIdentifier: TaskCell.indetifire)
+	}
+	
+	init(taskManager: ITaskManager, presenter: IPresenter) {
 		self.taskManager = taskManager
+		self.presenter = presenter
 		super.init(nibName: nil, bundle: nil)
 	}
 	
@@ -52,19 +57,38 @@ class TaskListViewController: UIViewController {
 
 extension TaskListViewController: UITableViewDataSource, UITableViewDelegate {
 	func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-		taskManager.getNumberOfTasks()
+		section == 0 ? taskManager.getUnDoneTasks().count : taskManager.getCompletedTasks().count
+	}
+	
+	func numberOfSections(in tableView: UITableView) -> Int {
+		2
+	}
+	
+	func tableView(_ tableView: UITableView, titleForHeaderInSection section: Int) -> String? {
+		section == 0 ? "CURRENT TASKS" : "COMPLETED TASKS"
 	}
 	
 	func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
 		let cell = tableView.dequeueReusableCell(withIdentifier: TaskCell.indetifire, for: indexPath)
 		guard let cell = cell as? TaskCell else { return UITableViewCell() }
-		cell.taskData = taskManager.getTaskData(at: indexPath)
+		let undoneTasks = presenter.sortTasks(tasks: taskManager.getUnDoneTasks())
+		let comletedTask = presenter.sortTasks(tasks: taskManager.getCompletedTasks())
+		
+		let task = indexPath.section == 0 ? undoneTasks[indexPath.row] : comletedTask[indexPath.row]
+		let taskData = presenter.matTaskToTaskCellData(task: task)
+		cell.taskData = taskData
 		return cell
 	}
 	
 	func tableView(_ tableView: UITableView, trailingSwipeActionsConfigurationForRowAt indexPath: IndexPath) -> UISwipeActionsConfiguration? {
-		let done = UIContextualAction(style: .destructive, title: "Done") { [weak self] _, _, _ in
-			self!.taskManager.comleteTask(at: indexPath)
+		let title = indexPath.section == 0 ? "Done" : "Undone"
+		let done = UIContextualAction(style: .normal, title: title) { [unowned self] _, _, _ in
+			let undoneTasks = presenter.sortTasks(tasks: taskManager.getUnDoneTasks())
+			let comletedTask = presenter.sortTasks(tasks: taskManager.getCompletedTasks())
+			let task = indexPath.section == 0 ? undoneTasks[indexPath.row] : comletedTask[indexPath.row]
+			
+			self.taskManager.completeTask(task: task)
+			print(undoneTasks)
 			tableView.reloadData()
 		}
 		
@@ -73,7 +97,8 @@ extension TaskListViewController: UITableViewDataSource, UITableViewDelegate {
 		return swipe
 	}
 	
+	
 	func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
-		70
+		self.heightForRow
 	}
 }

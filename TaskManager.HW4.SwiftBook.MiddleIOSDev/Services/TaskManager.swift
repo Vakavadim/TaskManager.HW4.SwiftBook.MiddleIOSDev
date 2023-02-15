@@ -8,44 +8,62 @@
 import Foundation
 
 protocol ITaskManager {
-	func getNumberOfTasks() -> Int
-	func getTaskData(at indexPath: IndexPath) -> TaskCellData?
-	func comleteTask(at indexPath: IndexPath)
+	func add(task: Task)
+	func delete(task: Task)
+	func completeTask(task: Task)
+	func getAllTasks() -> [Task]
+	func getUnDoneTasks() -> [Task]
+	func getCompletedTasks() -> [Task]
 }
 
-class TaskManager:	ITaskManager {
-	private var dataManager: DataManager
-	private var tasks: [Task] {
-		dataManager.getTasks()
-	}
+
+/// Task manager class which include all the Task management function.
+final class TaskManager:	ITaskManager {
+	private var dataManager: IStorageManager
+	private var tasks: [Task] = []
 	
-	init(dataManager: DataManager = StorageManager()) {
+	init(dataManager: IStorageManager = StorageManager()) {
 		self.dataManager = dataManager
+		self.tasks = dataManager.fetchData()
 	}
 	
-	func getNumberOfTasks() -> Int {
-		tasks.count
+	/// Add task function
+	/// - Parameter task: Task class instance or task class inheritor instance
+	func add(task: Task) {
+		tasks.append(task)
 	}
 	
-	func getTaskData(at indexPath: IndexPath) -> TaskCellData? {
-		let task = tasks[indexPath.row]
-		if let task = task as? ImortantTask {
-			let data = TaskCellData(title: task.title,
-									comleted: task.comleted,
-									priority: task.taskPriority,
-									date: task.deadLine)
-			return data
-		} else if let task = task as? RegularTask  {
-			let data = TaskCellData(title: task.title,
-									comleted: task.comleted,
-									priority: nil,
-									date: nil)
-			return data
+	/// Delete task function
+	/// - Parameter task: Task class instance or task class inheritor instance contained in the tasks array
+	func delete(task: Task) {
+		tasks.removeAll { $0 === task }
+	}
+	
+	/// Change the parameter Complete of the Task for the opposite
+	/// - Parameter task: Task class instance or task class inheritor instance contained in the tasks array
+	func completeTask(task: Task) {
+		for i in tasks {
+			if i === task {
+				task.completed.toggle()
+			}
 		}
-		return nil
 	}
 	
-	func comleteTask(at indexPath: IndexPath) {
-		tasks[indexPath.row].comleted.toggle()
+	/// The function returns all the tasks which contain in the tasks array
+	/// - Returns: Array of the Task class instances and inheritor instances
+	func getAllTasks() -> [Task] {
+		return tasks
+	}
+	
+	///  The function returns the array of task instances which parameter Completed is false
+	/// - Returns: Array of the Task class instances and inheritor instances
+	func getUnDoneTasks() -> [Task] {
+		return tasks.filter{$0.completed == false}
+	}
+	
+	///  The function returns the array of task instances which parameter Completed is true
+	/// - Returns: Array of the Task class instances and inheritor instances
+	func getCompletedTasks() -> [Task] {
+		return tasks.filter{$0.completed == true}
 	}
 }

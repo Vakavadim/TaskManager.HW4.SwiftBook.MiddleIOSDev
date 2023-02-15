@@ -7,13 +7,14 @@
 
 import Foundation
 
-protocol DataManager {
-	func getTasks() -> [Task]
+protocol IStorageManager {
+	func fetchData() -> [Task]
 }
 
-class StorageManager: DataManager {
+class StorageManager: IStorageManager {
+
 	private var tasks: [Task] = [
-		RegularTask(title: "Сut the grass"),
+		RegularTask(title: "Сut the grass", completed: true),
 		RegularTask(title: "Take out the trash"),
 		RegularTask(title: "Go to the hairdresser"),
 		RegularTask(title: "Buy new goggles"),
@@ -27,7 +28,10 @@ class StorageManager: DataManager {
 					 taskPriority: .low)
 	]
 	
-	func getTasks() -> [Task] {
+	func fetchData() -> [Task] {
+		let overdueTask = ImortantTask(title: "Buy Bitcoin in 2014", taskPriority: .medium)
+		overdueTask.deadLine = Calendar.current.date(byAdding: .day, value: -10, to: Date())!
+		tasks.append(overdueTask)
 		return tasks
 	}
 }

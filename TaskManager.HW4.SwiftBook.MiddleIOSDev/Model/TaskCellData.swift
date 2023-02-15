@@ -7,9 +7,11 @@
 
 import Foundation
 
+/// TaskCellData is the data structure which use to transport the data of task to ui elements
 struct TaskCellData {
 	let title: String
-	let comleted: Bool
+	let date: String?
 	let priority: TaskPriority?
-	let date: Date?
+	let completed: Bool
+	let isOutOfDeadline: Bool?
 }
