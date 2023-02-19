@@ -33,7 +33,7 @@ class Task {
 final class RegularTask: Task {}
 
 /// The inheritor of the Task class for implementing am important class with priority level and deadline date
-final class ImortantTask: Task {
+final class ImportantTask: Task {
 	private var _deadLine: Date? = nil
 	
 	var taskPriority: TaskPriority

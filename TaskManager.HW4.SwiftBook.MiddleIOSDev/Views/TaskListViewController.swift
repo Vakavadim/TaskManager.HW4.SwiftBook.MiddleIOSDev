@@ -7,16 +7,22 @@
 
 import UIKit
 
+protocol TaskListViewProtocol: AnyObject {
+	func render(viewData: ViewData)
+}
+
 class TaskListViewController: UIViewController {
 	weak var tableView: UITableView!
+	private var presenter: TaskListPresenterProtocol!
 	private let heightForRow: CGFloat = 70
-	private var taskManager: ITaskManager
-	private var presenter: IPresenter
+	private var comletedTaskData = [TaskCellData]()
+	private var unDoneTaskData = [TaskCellData]()
 	
 	override func loadView() {
 		super.loadView()
 		setupTableView()
 		setupTableViewCell()
+		assemblingPresenter()
 	}
 	
 	override func viewDidLoad() {
@@ -24,9 +30,17 @@ class TaskListViewController: UIViewController {
 		tableView.dataSource = self
 		tableView.delegate = self
 		tableView.backgroundColor = .white
+		presenter.getTaskData()
 	}
 	
-	func setupTableView() {
+	private func assemblingPresenter() {
+		let repository: ITaskRepository = TaskRepositoryStub()
+		let taskManager: ITaskManager = OrderedTaskManager(taskManager: TaskManager())
+		taskManager.addTasks(tasks: repository.getTasks())
+		presenter = TaskListPresenter(view: self, taskManager: taskManager)
+	}
+	
+	private func setupTableView() {
 		let tv = UITableView(frame: .zero, style: .plain)
 		tv.translatesAutoresizingMaskIntoConstraints = false
 		view.addSubview(tv)
@@ -43,39 +57,48 @@ class TaskListViewController: UIViewController {
 		let nib = UINib(nibName: "TaskCell", bundle: nil)
 		tableView.register(nib, forCellReuseIdentifier: TaskCell.indetifire)
 	}
-	
-	init(taskManager: ITaskManager, presenter: IPresenter) {
-		self.taskManager = taskManager
-		self.presenter = presenter
-		super.init(nibName: nil, bundle: nil)
+	/// return Task from indexPath
+	private func getTaskDataForIndex(_ indexPath: IndexPath) -> TaskCellData {
+		presenter.getTasksForSection(
+			completed: comletedTaskData,
+			unDone: unDoneTaskData,
+			section: indexPath.section
+		)[indexPath.row]
 	}
-	
-	required init?(coder: NSCoder) {
-		fatalError("init(coder:) has not been implemented")
+}
+
+extension TaskListViewController: TaskListViewProtocol {
+	func render(viewData: ViewData) {
+		self.comletedTaskData = viewData.comletedTaskData
+		self.unDoneTaskData = viewData.unDoneTaskData
+		
+		DispatchQueue.main.async {
+			self.tableView.reloadData()
+		}
 	}
 }
 
 extension TaskListViewController: UITableViewDataSource, UITableViewDelegate {
 	func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-		section == 0 ? taskManager.getUnDoneTasks().count : taskManager.getCompletedTasks().count
+		presenter.getTasksForSection(
+			completed: comletedTaskData,
+			unDone: unDoneTaskData,
+			section: section
+		).count
 	}
 	
 	func numberOfSections(in tableView: UITableView) -> Int {
-		2
+		presenter.getSectionsTitles().count
 	}
 	
 	func tableView(_ tableView: UITableView, titleForHeaderInSection section: Int) -> String? {
-		section == 0 ? "CURRENT TASKS" : "COMPLETED TASKS"
+		presenter.getSectionsTitles()[section]
 	}
 	
 	func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
 		let cell = tableView.dequeueReusableCell(withIdentifier: TaskCell.indetifire, for: indexPath)
 		guard let cell = cell as? TaskCell else { return UITableViewCell() }
-		let undoneTasks = presenter.sortTasks(tasks: taskManager.getUnDoneTasks())
-		let comletedTask = presenter.sortTasks(tasks: taskManager.getCompletedTasks())
-		
-		let task = indexPath.section == 0 ? undoneTasks[indexPath.row] : comletedTask[indexPath.row]
-		let taskData = presenter.matTaskToTaskCellData(task: task)
+		let taskData = getTaskDataForIndex(indexPath)
 		cell.taskData = taskData
 		return cell
 	}
@@ -83,13 +106,11 @@ extension TaskListViewController: UITableViewDataSource, UITableViewDelegate {
 	func tableView(_ tableView: UITableView, trailingSwipeActionsConfigurationForRowAt indexPath: IndexPath) -> UISwipeActionsConfiguration? {
 		let title = indexPath.section == 0 ? "Done" : "Undone"
 		let done = UIContextualAction(style: .normal, title: title) { [unowned self] _, _, _ in
-			let undoneTasks = presenter.sortTasks(tasks: taskManager.getUnDoneTasks())
-			let comletedTask = presenter.sortTasks(tasks: taskManager.getCompletedTasks())
-			let task = indexPath.section == 0 ? undoneTasks[indexPath.row] : comletedTask[indexPath.row]
-			
-			self.taskManager.completeTask(task: task)
-			print(undoneTasks)
-			tableView.reloadData()
+			self.presenter.doneTask(indexPath: indexPath)
+			self.presenter.getTaskData()
+			DispatchQueue.main.async {
+				tableView.reloadData()
+			}
 		}
 		
 		let swipe = UISwipeActionsConfiguration(actions: [done])

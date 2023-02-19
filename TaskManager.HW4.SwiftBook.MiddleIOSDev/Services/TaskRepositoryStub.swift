@@ -7,29 +7,29 @@
 
 import Foundation
 
-protocol IStorageManager {
-	func fetchData() -> [Task]
+protocol ITaskRepository {
+	func getTasks() -> [Task]
 }
 
-class StorageManager: IStorageManager {
+class TaskRepositoryStub: ITaskRepository {
 
 	private var tasks: [Task] = [
 		RegularTask(title: "Сut the grass", completed: true),
 		RegularTask(title: "Take out the trash"),
 		RegularTask(title: "Go to the hairdresser"),
 		RegularTask(title: "Buy new goggles"),
-		ImortantTask(title: "Buy a birthday present",
+		ImportantTask(title: "Buy a birthday present",
 					 taskPriority: .medium),
-		ImortantTask(title: "Submit the homework",
+		ImportantTask(title: "Submit the homework",
 					 taskPriority: .hight),
-		ImortantTask(title: "Buy cat food",
+		ImportantTask(title: "Buy cat food",
 					 taskPriority: .hight),
-		ImortantTask(title: "Download a new game",
+		ImportantTask(title: "Download a new game",
 					 taskPriority: .low)
 	]
 	
-	func fetchData() -> [Task] {
-		let overdueTask = ImortantTask(title: "Buy Bitcoin in 2014", taskPriority: .medium)
+	func getTasks() -> [Task] {
+		let overdueTask = ImportantTask(title: "Buy Bitcoin in 2014", taskPriority: .medium)
 		overdueTask.deadLine = Calendar.current.date(byAdding: .day, value: -10, to: Date())!
 		tasks.append(overdueTask)
 		return tasks

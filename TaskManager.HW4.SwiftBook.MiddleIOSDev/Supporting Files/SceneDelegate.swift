@@ -11,15 +11,12 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
 
     var window: UIWindow?
 
-
     func scene(_ scene: UIScene, willConnectTo session: UISceneSession, options connectionOptions: UIScene.ConnectionOptions) {
         guard let windowScene = (scene as? UIWindowScene) else { return }
-		
-		let taskManager = TaskManager()
-		let presenter = Presenter()
+
 		window = UIWindow(windowScene: windowScene)
 		window?.makeKeyAndVisible()
-		window?.rootViewController = TaskListViewController(taskManager: taskManager, presenter: presenter)
+		window?.rootViewController = TaskListViewController()
     }
 
     func sceneDidDisconnect(_ scene: UIScene) {
