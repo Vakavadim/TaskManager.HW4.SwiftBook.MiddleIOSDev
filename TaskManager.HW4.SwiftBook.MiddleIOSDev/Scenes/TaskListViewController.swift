@@ -7,22 +7,22 @@
 
 import UIKit
 
-protocol TaskListViewProtocol: AnyObject {
-	func render(viewData: ViewData)
+protocol ITaskListView: AnyObject {
+	func render(viewData: MainModel.ViewData)
 }
 
 class TaskListViewController: UIViewController {
 	weak var tableView: UITableView!
-	private var presenter: TaskListPresenterProtocol!
+	var viewData: MainModel.ViewData = MainModel.ViewData(tasksBySections: [])
+	var presenter: ITaskListPresenter!
+	
 	private let heightForRow: CGFloat = 70
-	private var comletedTaskData = [TaskCellData]()
-	private var unDoneTaskData = [TaskCellData]()
+
 	
 	override func loadView() {
 		super.loadView()
 		setupTableView()
 		setupTableViewCell()
-		assemblingPresenter()
 	}
 	
 	override func viewDidLoad() {
@@ -30,14 +30,8 @@ class TaskListViewController: UIViewController {
 		tableView.dataSource = self
 		tableView.delegate = self
 		tableView.backgroundColor = .white
-		presenter.getTaskData()
-	}
-	
-	private func assemblingPresenter() {
-		let repository: ITaskRepository = TaskRepositoryStub()
-		let taskManager: ITaskManager = OrderedTaskManager(taskManager: TaskManager())
-		taskManager.addTasks(tasks: repository.getTasks())
-		presenter = TaskListPresenter(view: self, taskManager: taskManager)
+		
+		presenter.viewIsReady()
 	}
 	
 	private func setupTableView() {
@@ -57,20 +51,11 @@ class TaskListViewController: UIViewController {
 		let nib = UINib(nibName: "TaskCell", bundle: nil)
 		tableView.register(nib, forCellReuseIdentifier: TaskCell.indetifire)
 	}
-	/// return Task from indexPath
-	private func getTaskDataForIndex(_ indexPath: IndexPath) -> TaskCellData {
-		presenter.getTasksForSection(
-			completed: comletedTaskData,
-			unDone: unDoneTaskData,
-			section: indexPath.section
-		)[indexPath.row]
-	}
 }
 
-extension TaskListViewController: TaskListViewProtocol {
-	func render(viewData: ViewData) {
-		self.comletedTaskData = viewData.comletedTaskData
-		self.unDoneTaskData = viewData.unDoneTaskData
+extension TaskListViewController: ITaskListView {
+	func render(viewData: MainModel.ViewData) {
+		self.viewData = viewData
 		
 		DispatchQueue.main.async {
 			self.tableView.reloadData()
@@ -80,25 +65,23 @@ extension TaskListViewController: TaskListViewProtocol {
 
 extension TaskListViewController: UITableViewDataSource, UITableViewDelegate {
 	func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-		presenter.getTasksForSection(
-			completed: comletedTaskData,
-			unDone: unDoneTaskData,
-			section: section
-		).count
+		let section = viewData.tasksBySections[section]
+		return section.tasks.count
 	}
 	
 	func numberOfSections(in tableView: UITableView) -> Int {
-		presenter.getSectionsTitles().count
+		viewData.tasksBySections.count
 	}
 	
 	func tableView(_ tableView: UITableView, titleForHeaderInSection section: Int) -> String? {
-		presenter.getSectionsTitles()[section]
+		viewData.tasksBySections[section].title
 	}
 	
 	func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
 		let cell = tableView.dequeueReusableCell(withIdentifier: TaskCell.indetifire, for: indexPath)
 		guard let cell = cell as? TaskCell else { return UITableViewCell() }
-		let taskData = getTaskDataForIndex(indexPath)
+		let tasks = viewData.tasksBySections[indexPath.section].tasks
+		let taskData = tasks[indexPath.row]
 		cell.taskData = taskData
 		return cell
 	}
@@ -106,8 +89,8 @@ extension TaskListViewController: UITableViewDataSource, UITableViewDelegate {
 	func tableView(_ tableView: UITableView, trailingSwipeActionsConfigurationForRowAt indexPath: IndexPath) -> UISwipeActionsConfiguration? {
 		let title = indexPath.section == 0 ? "Done" : "Undone"
 		let done = UIContextualAction(style: .normal, title: title) { [unowned self] _, _, _ in
-			self.presenter.doneTask(indexPath: indexPath)
-			self.presenter.getTaskData()
+			self.presenter.didDoneButtonPressed(indexPath: indexPath)
+
 			DispatchQueue.main.async {
 				tableView.reloadData()
 			}

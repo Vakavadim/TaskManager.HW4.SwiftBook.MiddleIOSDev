@@ -9,9 +9,9 @@ import Foundation
 
 /// Task priority enum which is used to set the priority in ImortantTask class
 enum TaskPriority: Int, Comparable {
-	case hight
-	case medium
 	case low
+	case medium
+	case hight
 	
 	static func < (lhs: TaskPriority, rhs: TaskPriority) -> Bool {
 		return lhs.rawValue < rhs.rawValue
