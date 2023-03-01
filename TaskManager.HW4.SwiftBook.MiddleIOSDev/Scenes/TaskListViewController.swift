@@ -35,16 +35,16 @@ class TaskListViewController: UIViewController {
 	}
 	
 	private func setupTableView() {
-		let tv = UITableView(frame: .zero, style: .plain)
-		tv.translatesAutoresizingMaskIntoConstraints = false
-		view.addSubview(tv)
+		let tableView = UITableView(frame: .zero, style: .plain)
+		tableView.translatesAutoresizingMaskIntoConstraints = false
+		view.addSubview(tableView)
 		NSLayoutConstraint.activate([
-			tv.topAnchor.constraint(equalTo: view.topAnchor),
-			tv.bottomAnchor.constraint(equalTo: view.bottomAnchor),
-			tv.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-			tv.trailingAnchor.constraint(equalTo: view.trailingAnchor)
+			tableView.topAnchor.constraint(equalTo: view.topAnchor),
+			tableView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+			tableView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+			tableView.trailingAnchor.constraint(equalTo: view.trailingAnchor)
 		])
-		self.tableView = tv
+		self.tableView = tableView
 	}
 	
 	private func setupTableViewCell() {
